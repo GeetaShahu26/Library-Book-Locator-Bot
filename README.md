@@ -1,4 +1,3 @@
-Here is the refined README.md content. I have converted the technical details into structured paragraphs with clear spacing, making it easy to read while maintaining a professional GitHub aesthetic.
 
 🤖 RFID-Triggered Smart Line Follower
 An autonomous robotics project featuring a dual-controller architecture. This bot remains in standby mode until a genuine RFID tag is scanned, which then triggers a precise line-following sequence.
