@@ -1,0 +1,56 @@
+#include <SPI.h>
+#include <MFRC522.h>
+
+// RFID Pin Configuration
+#define SS_PIN  15 // D8
+#define RST_PIN 0  // D3
+#define TRIGGER_PIN 5 // D1 -> To Arduino Pin 5
+
+MFRC522 mfrc522(SS_PIN, RST_PIN);
+
+void setup() {
+  Serial.begin(115200); 
+  SPI.begin();
+  mfrc522.PCD_Init();
+  
+  // Set the trigger pin as output
+  pinMode(TRIGGER_PIN, OUTPUT);
+  
+  // FORCE pin to LOW immediately at startup to prevent "Auto-Start"
+  digitalWrite(TRIGGER_PIN, LOW); 
+  
+  Serial.println("ESP8266: Stabilized. Waiting for genuine scan...");
+}
+
+void loop() {
+  // 1. Force the pin LOW at the start of every loop
+  // This drains any static charge that might "trip" the Arduino
+  digitalWrite(TRIGGER_PIN, LOW);
+
+  // 2. Re-initialize the RFID reader to keep it from hanging
+  mfrc522.PCD_Init(); 
+
+  // 3. Look for a new card. If no card, exit the loop immediately.
+  if ( ! mfrc522.PICC_IsNewCardPresent() || ! mfrc522.PICC_ReadCardSerial()) {
+    return; 
+  }
+
+  // 4. If we reach this point, a GENUINE card has been scanned
+  Serial.println("--- VALID RFID DETECTED ---");
+
+  // 5. Send a precise 300ms pulse to the Arduino
+  digitalWrite(TRIGGER_PIN, HIGH);
+  delay(300); 
+  digitalWrite(TRIGGER_PIN, LOW); // Pull back to 0V immediately
+
+  // 6. Halt the card to prevent infinite re-triggering while it stays near the reader
+  mfrc522.PICC_HaltA();
+  mfrc522.PCD_StopCrypto1();
+  
+  // 7. COOLDOWN: Wait while the bot performs its 2-second follow.
+  // This ensures the ESP stays quiet until the Arduino is ready again.
+  Serial.println("Bot is moving... ESP in standby.");
+  delay(3000); 
+  
+  Serial.println("Ready for next scan.");
+}

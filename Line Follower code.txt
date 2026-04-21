@@ -1,0 +1,83 @@
+// --- TRIGGER PIN ---
+const int TRIGGER_PIN = 5; 
+
+// Motor A (Left)
+const int ENA = 11; const int IN1 = 10; const int IN2 = 9; 
+// Motor B (Right)
+const int ENB = 6;  const int IN3 = 8;  const int IN4 = 7; 
+
+// --- YOUR PERFECT SPEEDS ---
+#define s 70 
+#define t 90 
+
+// IR Sensors
+const int IRSensorLeft = 2; 
+const int IRSensorRight = 3; 
+
+void setup() {
+  pinMode(TRIGGER_PIN, INPUT); 
+  
+  pinMode(ENA, OUTPUT); pinMode(IN1, OUTPUT); pinMode(IN2, OUTPUT);
+  pinMode(ENB, OUTPUT); pinMode(IN3, OUTPUT); pinMode(IN4, OUTPUT);
+  pinMode(IRSensorLeft, INPUT); pinMode(IRSensorRight, INPUT);
+
+  stopMotors(); 
+  Serial.begin(9600);
+  Serial.println("SYSTEM READY: WAITING FOR GENUINE RFID SIGNAL...");
+}
+
+void loop() {
+  // NOISE FILTER: Check if pin is HIGH
+  if (digitalRead(TRIGGER_PIN) == HIGH) {
+    delay(50); // Wait 50ms
+    // Check again! If it's still HIGH, it's a real scan, not noise.
+    if (digitalRead(TRIGGER_PIN) == HIGH) {
+      
+      Serial.println("RFID SCAN CONFIRMED! STARTING MOTORS...");
+      unsigned long startTime = millis();
+      
+      while (millis() - startTime < 2000) {
+        lineFollowLogic();
+      }
+      
+      stopMotors(); 
+      Serial.println("MOVEMENT FINISHED.");
+
+      // Wait for signal to go LOW so it doesn't loop
+      while(digitalRead(TRIGGER_PIN) == HIGH) {
+        delay(10); 
+      }
+      Serial.println("READY FOR NEXT SCAN.");
+    }
+  }
+}
+
+void lineFollowLogic() {
+  bool left = digitalRead(IRSensorLeft);
+  bool right = digitalRead(IRSensorRight);
+  
+  if (left == LOW && right == LOW) moveForward();
+  else if (left == LOW && right == HIGH) turnRight();
+  else if (left == HIGH && right == LOW) turnLeft();
+  else stopMotors();
+}
+
+void moveForward() {
+  digitalWrite(IN1, HIGH); digitalWrite(IN2, LOW); analogWrite(ENA, s); 
+  digitalWrite(IN3, HIGH); digitalWrite(IN4, LOW); analogWrite(ENB, s); 
+}
+
+void turnRight() {
+  digitalWrite(IN1, LOW); digitalWrite(IN2, HIGH); analogWrite(ENA, t); 
+  digitalWrite(IN3, HIGH); digitalWrite(IN4, LOW); analogWrite(ENB, t); 
+}
+
+void turnLeft() {
+  digitalWrite(IN1, HIGH); digitalWrite(IN2, LOW); analogWrite(ENA, t); 
+  digitalWrite(IN3, LOW); digitalWrite(IN4, HIGH); analogWrite(ENB, t); 
+}
+
+void stopMotors() {
+  digitalWrite(IN1, LOW); digitalWrite(IN2, LOW); analogWrite(ENA, 0); 
+  digitalWrite(IN3, LOW); digitalWrite(IN4, LOW); analogWrite(ENB, 0); 
+}
